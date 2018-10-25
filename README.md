@@ -8,17 +8,17 @@
 training transition model network with random sample actions
 
 ```
-python parta -s True
+python parta.py -s True
 ```
 training transition model network with A star sample actions
 
 ```
-python partb -s True -l True
+python partb.py -s True -l True
 ```
 testing
 
 ```
-python partb -t True
+python partb.py -t True
 ```
 
 
