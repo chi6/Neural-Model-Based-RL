@@ -56,10 +56,9 @@ class agent(object):
 
         concat_input = tf.concat((self.input_a, self.input_s), axis= 1)
         with tf.variable_scope('model_pred'):
-            layer1 = tf.layers.dense(concat_input, 256, activation=tf.nn.relu)
-            layer2 = tf.layers.dense(layer1, 256, activation=tf.nn.relu)
-            layer3 = tf.layers.dense(layer2, 256, activation=tf.nn.relu)
-            self.output = tf.layers.dense(layer3, self.state_size, activation= None)
+            layer1 = tf.layers.dense(concat_input, 128, activation=tf.nn.relu)
+            layer2 = tf.layers.dense(layer1, 128, activation=tf.nn.relu)
+            self.output = tf.layers.dense(layer2, self.state_size, activation= None)
 
     def A_star_planner(self, cur_state, num_samples):
         '''
