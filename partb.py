@@ -10,17 +10,21 @@ import tensorflow as tf
 import numpy as np
 from matplotlib import pyplot as plt
 import optparse
+from gym import wrappers
 
 LR = 0.001
 def parseOptions():
     optParser = optparse.OptionParser()
 
     optParser.add_option('-s', '--save',action='store',
-                         type='string',dest='save_model',default="True",
+                         type='string',dest='save_model',default=True,
                          metavar="R", help='Reward for living for a time step (default %default)')
     optParser.add_option('-l', '--load', action='store',
-                         type='string', dest='load_model',default="True",
+                         type='string', dest='load_model',default=True,
                          help='Load model from checkpoint')
+    optParser.add_option('-t', '--test', action='store',
+                         type='string', dest='test_model', default=False,
+                         help='test model')
 
     opts, args = optParser.parse_args()
 
@@ -52,9 +56,10 @@ class agent(object):
 
         concat_input = tf.concat((self.input_a, self.input_s), axis= 1)
         with tf.variable_scope('model_pred'):
-            layer1 = tf.layers.dense(concat_input, 128, activation=tf.nn.relu)
-            layer2 = tf.layers.dense(layer1, 128, activation=tf.nn.relu)
-            self.output = tf.layers.dense(layer2, self.state_size, activation= None)
+            layer1 = tf.layers.dense(concat_input, 256, activation=tf.nn.relu)
+            layer2 = tf.layers.dense(layer1, 256, activation=tf.nn.relu)
+            layer3 = tf.layers.dense(layer2, 256, activation=tf.nn.relu)
+            self.output = tf.layers.dense(layer3, self.state_size, activation= None)
 
     def A_star_planner(self, cur_state, num_samples):
         '''
@@ -69,7 +74,7 @@ class agent(object):
         new_obs = old_obs
         # Obstain sequence length of 10 of action and states
         for i in range(10):
-            action = np.asarray([-2 + 4/num_samples * i for i in range(num_samples)])[:,np.newaxis]#(np.random.rand(num_samples, self.action_size)-0.5)*4
+            action = (np.random.rand(num_samples, self.action_size)-0.5)*4#np.asarray([-2 + 4/num_samples * i for i in range(num_samples)])[:,np.newaxis]
             if i == 0:
                 action_list = action
             new_obs = self.sess.run(self.output, feed_dict={self.input_s: np.asarray(new_obs).reshape([-1,self.state_size]),
@@ -127,10 +132,7 @@ class agent(object):
         self.writter.add_summary(summary)
         return difference
 
-
-if __name__ == '__main__':
-    ops = parseOptions()
-
+def train(ops):
     env = gym.make('Pendulum-v0').unwrapped
     sess = tf.Session()
 
@@ -161,3 +163,39 @@ if __name__ == '__main__':
         print("episode_reward : {}, training_state_error: {}".format(ep_r,difference))
     plt.plot(diff_s)
     plt.show()
+
+def test(ops):
+    env = gym.make('Pendulum-v0').unwrapped
+    env = wrappers.Monitor(env, './Pendulum-experiment-1',force=True)
+    sess = tf.Session()
+
+    Agent = agent(env.observation_space.shape[0], env.action_space.shape[0],sess)
+    diff_s = []
+    if ops.load_model:
+        Agent.saver.restore(sess,tf.train.latest_checkpoint(checkpoint_dir="./model/"))
+
+    step = 0
+    state = env.reset()
+    ep_r = 0
+    Agent.buffer_r, Agent.buffer_s, Agent.buffer_a, Agent.buffer_t_s = [], [], [], []
+    done = False
+    while not done:
+        env.render()
+
+        action = Agent.A_star_planner(state,num_samples=2000)
+        next_state, reward, done, _ = env.step(action)
+        Agent.store_transition(state, action, reward,next_state)
+        state = next_state
+
+        ep_r += reward
+        difference = Agent.update()
+        print("step : {}, episode_reward: {}".format(step,ep_r))
+        step += 1
+
+if __name__ == '__main__':
+    ops = parseOptions()
+
+    if ops.test_model:
+        test(ops)
+    else:
+        train(ops)
