@@ -10,7 +10,7 @@ training transition model network with random sample actions
 ```
 python parta.py -s True
 ```
-training transition model network with A star sample actions
+training transition model network with MPC sample actions
 
 ```
 python partb.py -s True -l True
