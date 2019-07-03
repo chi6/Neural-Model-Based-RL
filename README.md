@@ -2,7 +2,7 @@
 
 ## Initial algorithm set
 
-* [v] Transition Model Prediction + Multi Step A-star Planning
+* [v] Transition Model Prediction + Multi Step MPC Planning
 
 #### Running Experiments
 training transition model network with random sample actions
